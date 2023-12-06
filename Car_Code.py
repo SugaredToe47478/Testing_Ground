@@ -1,79 +1,49 @@
+# Import the RPi.GPIO library
 import RPi.GPIO as GPIO
-from time import sleep
+# Import the time library
+import time
 
-in1 = 24
-in2 = 23
-en = 25
-temp1 = 1
+# Set the GPIO mode to BOARD
+GPIO.setmode(GPIO.BOARD)
 
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(in1, GPIO.OUT)
-GPIO.setup(in2, GPIO.OUT)
-GPIO.setup(en, GPIO.OUT)
-GPIO.output(in1, GPIO.LOW)
-GPIO.output(in2, GPIO.LOW)
-p = GPIO.PWM(en, 1000)
-p.start(25)
-print("\n")
-print("The default speed & direction of the motor is LOW & Forward.....")
-print("r - run, s - stop, f - forward, b - backward, l - low, m - medium, h - high, e - exit")
-print("\n")
+# Define the GPIO pins for the servo and the ESC
+SERVO_PIN = 11
+ESC_PIN = 13
 
-while True:
-    x = input()
+# Set the servo and ESC pins as output
+GPIO.setup(SERVO_PIN, GPIO.OUT)
+GPIO.setup(ESC_PIN, GPIO.OUT)
 
-    if x == 'r':
-        print("run")
-        if temp1 == 1:
-            GPIO.output(in1, GPIO.HIGH)
-            GPIO.output(in2, GPIO.LOW)
-            print("forward")
-            x = 'z'
-        else:
-            GPIO.output(in1, GPIO.LOW)
-            GPIO.output(in2, GPIO.HIGH)
-            print("backward")
-            x = 'z'
+# Create PWM objects for the servo and ESC with 50 Hz frequency
+servo = GPIO.PWM(SERVO_PIN, 50)
+esc = GPIO.PWM(ESC_PIN, 50)
 
-    elif x == 's':
-        print("stop")
-        GPIO.output(in1, GPIO.LOW)
-        GPIO.output(in2, GPIO.LOW)
-        x = 'z'
+# Start the PWM with 0% duty cycle (no signal)
+servo.start(0)
+esc.start(0)
 
-    elif x == 'f':
-        print("forward")
-        GPIO.output(in1, GPIO.HIGH)
-        GPIO.output(in2, GPIO.LOW)
-        temp1 = 1
-        x = 'z'
+# Define a function to map the angle to the duty cycle
+def angle_to_duty(angle):
+    # The duty cycle ranges from 2.5% to 12.5% for 0 to 180 degrees
+    return 2.5 + (angle / 180) * 10
 
-    elif x == 'b':
-        print("backward")
-        GPIO.output(in1, GPIO.LOW)
-        GPIO.output(in2, GPIO.HIGH)
-        temp1 = 0
-        x = 'z'
+# Define a function to map the speed to the duty cycle
+def speed_to_duty(speed):
+    # The duty cycle ranges from 5% to 10% for 0 to 100% speed
+    return 5 + (speed / 100) * 5
 
-    elif x == 'l':
-        print("low")
-        p.ChangeDutyCycle(25)
-        x = 'z'
+# Move the servo to 90 degrees
+servo.ChangeDutyCycle(angle_to_duty(90))
 
-    elif x == 'm':
-        print("medium")
-        p.ChangeDutyCycle(50)
-        x = 'z'
+# Set the ESC speed to 50%
+esc.ChangeDutyCycle(speed_to_duty(50))
 
-    elif x == 'h':
-        print("high")
-        p.ChangeDutyCycle(75)
-        x = 'z'
+# Pause for 5 seconds
+time.sleep(5)
 
-    elif x == 'e':
-        GPIO.cleanup()
-        break
+# Stop the PWM
+servo.stop()
+esc.stop()
 
-    else:
-        print("<<< wrong data >>>")
-        print("please enter the defined data to continue.....")
+# Clean up the GPIO
+GPIO.cleanup()
